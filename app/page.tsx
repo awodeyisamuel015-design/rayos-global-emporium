@@ -1,0 +1,237 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+
+import ThemeToggle from "./components/ThemeToggle";
+import CartDrawer from "./components/CartDrawer";
+import WelcomeScreen from "./components/WelcomeScreen";
+import { showToast } from "./components/Toast";
+
+import { cartStore } from "./cartstore";
+import { wishlistStore } from "./wishlistStore";
+import { productStore, Product } from "./lib/productStore";
+
+export default function Home() {
+  const router = useRouter();
+
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
+
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+
+  const [openCart, setOpenCart] = useState(false);
+
+  useEffect(() => {
+    const updateCart = () =>
+      setCartCount(cartStore.getCart().length);
+
+    const updateWishlist = () =>
+      setWishlistCount(wishlistStore.getAll().length);
+
+    const updateProducts = () =>
+      setProducts([...productStore.getAll()]);
+
+    updateCart();
+    updateWishlist();
+    updateProducts();
+
+    cartStore.subscribe(updateCart);
+    wishlistStore.subscribe(updateWishlist);
+    productStore.subscribe(updateProducts);
+
+    return () => {
+      cartStore.unsubscribe(updateCart);
+      wishlistStore.unsubscribe(updateWishlist);
+      productStore.unsubscribe(updateProducts);
+    };
+  }, []);
+
+  // 🔥 IMPORTANT: SHOW WELCOME FIRST
+  if (showWelcome) {
+    return (
+      <WelcomeScreen
+        onFinish={() => setShowWelcome(false)}
+      />
+    );
+  }
+
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesCategory =
+      category === "all" ||
+      product.category === category;
+
+    return matchesSearch && matchesCategory;
+  });
+
+  return (
+    <main className="min-h-screen text-black dark:text-white transition-colors duration-300">
+
+      {/* HEADER */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/30 dark:bg-black/30 border-b border-white/10 px-6 py-4">
+
+        <div className="flex justify-between items-center">
+
+          <Image
+            src="/logo.png"
+            alt="Rayos Global Emporium"
+            width={110}
+            height={50}
+            className="w-[120px] h-auto scale-200 relative left-[-22px]"
+          />
+
+          <div className="flex items-center gap-3">
+
+            <ThemeToggle />
+
+            <button
+              onClick={() => setOpenCart(true)}
+              className="relative bg-yellow-400 text-black px-4 py-2 rounded-full font-semibold"
+            >
+              🛒 Cart
+              {cartCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => router.push("/wishlist")}
+              className="relative bg-pink-500 text-white px-4 py-2 rounded-full font-semibold"
+            >
+              ❤️ Wishlist
+              {wishlistCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-white text-black text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
+
+          </div>
+
+        </div>
+      </header>
+
+      {/* HERO */}
+      <section className="text-center py-16 px-6">
+
+        <h2 className="text-5xl font-bold mb-4">
+          Elevate Your Style
+        </h2>
+
+        <input
+          className="mt-6 px-5 py-3 rounded-full bg-white/20 dark:bg-black/40 backdrop-blur-md border w-full max-w-md"
+          placeholder="Search products..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+      </section>
+
+      {/* CATEGORY */}
+      <section className="flex justify-center gap-3 mb-10 flex-wrap px-4">
+        {["All", "Men", "Women", "Kids"].map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setCategory(cat)}
+            className={`px-4 py-2 rounded-full ${
+              category === cat
+                ? "bg-yellow-400 text-black"
+                : "bg-white/20 dark:bg-black/40"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </section>
+
+      {/* PRODUCTS */}
+      <section className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 pb-20">
+
+        {filteredProducts.length === 0 ? (
+          <p className="col-span-full text-center opacity-70">
+            No products found
+          </p>
+        ) : (
+          filteredProducts.map((product) => (
+            <div
+              key={product.id}
+              className="bg-white/20 dark:bg-black/40 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10"
+            >
+              <img
+                src={product.image}
+                className="w-full h-56 object-cover"
+              />
+
+              <div className="p-4">
+
+                <h3 className="font-bold">{product.name}</h3>
+
+                <p className="text-yellow-400 font-bold mt-2">
+                  ₦{product.price.toLocaleString()}
+                </p>
+
+                <button
+                  onClick={() =>
+                    router.push(`/product/${product.id}`)
+                  }
+                  className="w-full mt-3 bg-blue-500 text-white py-2 rounded-lg"
+                >
+                  👀 View Product
+                </button>
+
+                <button
+                  onClick={() => {
+                    wishlistStore.add(product);
+                    showToast("Added to wishlist ❤️");
+                  }}
+                  className="w-full mt-2 bg-pink-500 text-white py-2 rounded-lg"
+                >
+                  ❤️ Wishlist
+                </button>
+
+                <button
+                  onClick={() => {
+                    cartStore.addToCart(product);
+                    showToast("Added to cart 🛒");
+                  }}
+                  className="w-full mt-2 bg-yellow-400 text-black py-2 rounded-lg font-semibold"
+                >
+                  🛒 Add to Cart
+                </button>
+
+              </div>
+            </div>
+          ))
+        )}
+
+      </section>
+
+      {/* ADMIN */}
+      <Link
+        href="/admin/login"
+        className="fixed bottom-6 left-6 bg-yellow-400 text-black px-5 py-3 rounded-full font-bold"
+      >
+        🔐 Admin
+      </Link>
+
+      {/* FOOTER */}
+      <footer className="text-center py-8 opacity-70 border-t border-white/10">
+        © Since 2024 Rayos Global Emporium
+      </footer>
+
+      <CartDrawer open={openCart} onClose={() => setOpenCart(false)} />
+    </main>
+  );
+}

@@ -1,0 +1,161 @@
+
+@import "tailwindcss";
+
+/* Tailwind v4 Dark Mode Support */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =========================
+   THEME VARIABLES
+========================= */
+
+:root {
+  --foreground: #171717;
+  --bg-image: url("/light-bg.jpg");
+}
+
+.dark {
+  --foreground: #ededed;
+  --bg-image: url("/dark-bg.jpg");
+}
+
+/* =========================
+   BODY
+========================= */
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--foreground);
+
+  background-image: var(--bg-image);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+
+  min-height: 100vh;
+
+  transition:
+    background-image 0.5s ease,
+    color 0.5s ease;
+}
+
+/* =========================
+   OVERLAY
+========================= */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+
+  transition: background 0.5s ease;
+}
+
+/* Light Mode Overlay */
+html:not(.dark) body::before {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Dark Mode Overlay */
+html.dark body::before {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+/* =========================
+   PREMIUM SCROLLBAR
+========================= */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(
+    180deg,
+    #facc15,
+    #000000
+  );
+
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #facc15;
+}
+
+/* =========================
+   HEART ANIMATION
+========================= */
+
+.heart-bounce {
+  animation: pop 0.3s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.4);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================
+   SLIDE ANIMATION
+========================= */
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide {
+  animation: slideIn 0.25s ease-out;
+}
+
+/* =========================
+   GLASSMORPHISM CARD
+========================= */
+
+.glass-card {
+  backdrop-filter: blur(12px);
+
+  background: rgba(255, 255, 255, 0.25);
+
+  border: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.3
+  );
+
+  border-radius: 20px;
+}
+
+.dark .glass-card {
+  background: rgba(0, 0, 0, 0.35);
+
+  border: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.1
+  );
+}
