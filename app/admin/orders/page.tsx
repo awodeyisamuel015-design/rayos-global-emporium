@@ -26,11 +26,12 @@ export default function AdminOrdersPage() {
   }, []);
 
   const updateStatus = (
-    id: string,
-    status: OrderStatus
-  ) => {
-    orderStore.updateOrderStatus(id, status);
-  };
+  id: string,
+  status: Order["status"]
+) => {
+  orderStore.updateOrderStatus(id, status);
+  loadOrders();
+};
 
   const deleteOrder = (id: string) => {
     const confirmed = window.confirm(
