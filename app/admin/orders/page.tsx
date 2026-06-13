@@ -30,6 +30,7 @@ export default function AdminOrdersPage() {
     status: OrderStatus
   ) => {
     orderStore.updateOrderStatus(id, status);
+    loadOrders();
   };
 
   const deleteOrder = (id: string) => {
@@ -40,13 +41,13 @@ export default function AdminOrdersPage() {
     if (!confirmed) return;
 
     orderStore.deleteOrder(id);
+    loadOrders();
   };
 
   return (
-    <main className="min-h-screen bg-gray-100 dark:bg-black dark:text-white p-6 transition-colors duration-300">
+    <main className="min-h-screen bg-gray-100 dark:bg-black dark:text-white p-6">
       <div className="max-w-7xl mx-auto">
 
-        {/* HEADER */}
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
 
           <h1 className="text-4xl font-bold">
@@ -76,7 +77,6 @@ export default function AdminOrdersPage() {
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6"
               >
 
-                {/* ORDER HEADER */}
                 <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-6">
 
                   <div>
@@ -107,7 +107,6 @@ export default function AdminOrdersPage() {
 
                 </div>
 
-                {/* CUSTOMER DETAILS */}
                 <div className="mb-6">
 
                   <h3 className="font-bold mb-2">
@@ -115,23 +114,19 @@ export default function AdminOrdersPage() {
                   </h3>
 
                   <p>
-                    <strong>Name:</strong>{" "}
-                    {order.name}
+                    <strong>Name:</strong> {order.name}
                   </p>
 
                   <p>
-                    <strong>Phone:</strong>{" "}
-                    {order.phone}
+                    <strong>Phone:</strong> {order.phone}
                   </p>
 
                   <p>
-                    <strong>Address:</strong>{" "}
-                    {order.address}
+                    <strong>Address:</strong> {order.address}
                   </p>
 
                 </div>
 
-                {/* ORDER ITEMS */}
                 <div className="mb-6">
 
                   <h3 className="font-bold mb-2">
@@ -161,7 +156,6 @@ export default function AdminOrdersPage() {
 
                 </div>
 
-                {/* FOOTER */}
                 <div className="flex flex-col md:flex-row md:justify-between gap-4">
 
                   <div className="text-xl font-bold text-green-600">
