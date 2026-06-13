@@ -53,7 +53,7 @@ export default function Home() {
     };
   }, []);
 
-  // 🔥 IMPORTANT: SHOW WELCOME FIRST
+  // 🔥 SHOW WELCOME SCREEN FIRST
   if (showWelcome) {
     return (
       <WelcomeScreen
@@ -82,14 +82,16 @@ export default function Home() {
 
         <div className="flex justify-between items-center">
 
+          {/* LOGO */}
           <Image
             src="/logo.png"
             alt="Rayos Global Emporium"
-            width={110}
+            width={120}
             height={50}
-            className="w-[120px] h-auto scale-200 relative left-[-22px]"
+            className="w-[120px] h-auto scale-125 relative left-[-10px]"
           />
 
+          {/* ACTIONS */}
           <div className="flex items-center gap-3">
 
             <ThemeToggle />
@@ -141,11 +143,12 @@ export default function Home() {
 
       {/* CATEGORY */}
       <section className="flex justify-center gap-3 mb-10 flex-wrap px-4">
-        {["All", "Men", "Women", "Kids"].map((cat) => (
+
+        {["all", "men", "women", "kids"].map((cat) => (
           <button
             key={cat}
             onClick={() => setCategory(cat)}
-            className={`px-4 py-2 rounded-full ${
+            className={`px-4 py-2 rounded-full transition ${
               category === cat
                 ? "bg-yellow-400 text-black"
                 : "bg-white/20 dark:bg-black/40"
@@ -154,6 +157,7 @@ export default function Home() {
             {cat}
           </button>
         ))}
+
       </section>
 
       {/* PRODUCTS */}
@@ -169,9 +173,11 @@ export default function Home() {
               key={product.id}
               className="bg-white/20 dark:bg-black/40 backdrop-blur-md rounded-2xl overflow-hidden border border-white/10"
             >
+
               <img
                 src={product.image}
                 className="w-full h-56 object-cover"
+                alt={product.name}
               />
 
               <div className="p-4">
@@ -232,6 +238,7 @@ export default function Home() {
       </footer>
 
       <CartDrawer open={openCart} onClose={() => setOpenCart(false)} />
+
     </main>
   );
 }

@@ -1,3 +1,4 @@
+
 export type Product = {
   id: string;
   name: string;
@@ -33,9 +34,11 @@ function load(): Order[] {
 
   try {
     const data = localStorage.getItem(STORAGE_KEY);
+
     return data ? JSON.parse(data) : [];
   } catch (err) {
     console.error("Failed to load orders:", err);
+
     return [];
   }
 }
@@ -45,7 +48,10 @@ function save() {
   if (typeof window === "undefined") return;
 
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(orders)
+    );
   } catch (err) {
     console.error("Failed to save orders:", err);
   }
@@ -63,8 +69,10 @@ function emit() {
 
 /* ---------------- STORE ---------------- */
 export const orderStore = {
-  getAll: () => orders,
+  /* GET ALL ORDERS */
+  getAll: (): Order[] => orders,
 
+  /* CREATE ORDER */
   createOrder: (
     name: string,
     phone: string,
@@ -73,7 +81,7 @@ export const orderStore = {
     status: OrderStatus = "pending"
   ) => {
     const total = items.reduce(
-      (sum, i) => sum + i.price,
+      (sum, item) => sum + item.price,
       0
     );
 
@@ -89,10 +97,12 @@ export const orderStore = {
     };
 
     orders.unshift(newOrder);
+
     save();
     emit();
   },
 
+  /* UPDATE STATUS */
   updateOrderStatus: (
     id: string,
     status: OrderStatus
@@ -107,17 +117,33 @@ export const orderStore = {
     emit();
   },
 
-  clear: () => {
-    orders = [];
+  /* DELETE ORDER */
+  deleteOrder: (id: string) => {
+    orders = orders.filter(
+      (order) => order.id !== id
+    );
+
     save();
     emit();
   },
 
+  /* CLEAR ALL ORDERS */
+  clear: () => {
+    orders = [];
+
+    save();
+    emit();
+  },
+
+  /* SUBSCRIBE */
   subscribe: (fn: Function) => {
     listeners.push(fn);
   },
 
+  /* UNSUBSCRIBE */
   unsubscribe: (fn: Function) => {
-    listeners = listeners.filter((l) => l !== fn);
+    listeners = listeners.filter(
+      (listener) => listener !== fn
+    );
   },
 };
