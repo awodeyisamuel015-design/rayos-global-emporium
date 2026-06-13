@@ -1,4 +1,3 @@
-
 export type Product = {
   id: string;
   name: string;
@@ -23,75 +22,49 @@ export type Order = {
   status: OrderStatus;
 };
 
-const STORAGE_KEY = "rayos_orders_v2";
+const STORAGE_KEY = "rayos_orders_v3";
 
 let orders: Order[] = [];
+let listeners: Function[] = [];
 
-/* Better typing for listeners */
-let listeners: Array<() => void> = [];
-
-/* ---------------- LOAD ---------------- */
+/* LOAD */
 function load(): Order[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
+  if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-
     return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Failed to load orders:", error);
-
+  } catch {
     return [];
   }
 }
 
-/* ---------------- SAVE ---------------- */
+/* SAVE */
 function save() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(orders)
-    );
-  } catch (error) {
-    console.error("Failed to save orders:", error);
-  }
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
 }
 
-/* ---------------- EMIT ---------------- */
-function emit() {
-  listeners.forEach((listener) => listener());
-}
-
-/* ---------------- INIT ---------------- */
+/* INIT */
 if (typeof window !== "undefined") {
   orders = load();
 }
 
-/* ---------------- STORE ---------------- */
-export const orderStore = {
-  /* GET ALL ORDERS */
-  getAll(): Order[] {
-    return [...orders];
-  },
+/* EMIT */
+function emit() {
+  listeners.forEach((fn) => fn());
+}
 
-  /* CREATE ORDER */
-  createOrder(
+export const orderStore = {
+  getAll: () => orders,
+
+  createOrder: (
     name: string,
     phone: string,
     address: string,
     items: Product[],
     status: OrderStatus = "pending"
-  ) {
-    const total = items.reduce(
-      (sum, item) => sum + item.price,
-      0
-    );
+  ) => {
+    const total = items.reduce((sum, i) => sum + i.price, 0);
 
     const newOrder: Order = {
       id: Date.now().toString(),
@@ -105,56 +78,35 @@ export const orderStore = {
     };
 
     orders.unshift(newOrder);
-
     save();
     emit();
   },
 
-  /* UPDATE STATUS */
-  updateOrderStatus(
-    id: string,
-    status: OrderStatus
-  ) {
-    orders = orders.map((order) =>
-      order.id === id
-        ? {
-            ...order,
-            status,
-          }
-        : order
+  updateOrderStatus: (id: string, status: OrderStatus) => {
+    orders = orders.map((o) =>
+      o.id === id ? { ...o, status } : o
     );
-
     save();
     emit();
   },
 
-  /* DELETE ORDER */
-  deleteOrder(id: string) {
-    orders = orders.filter(
-      (order) => order.id !== id
-    );
-
+  deleteOrder: (id: string) => {
+    orders = orders.filter((o) => o.id !== id);
     save();
     emit();
   },
 
-  /* CLEAR ALL ORDERS */
-  clear() {
+  clear: () => {
     orders = [];
-
     save();
     emit();
   },
 
-  /* SUBSCRIBE */
-  subscribe(listener: () => void) {
-    listeners.push(listener);
+  subscribe: (fn: Function) => {
+    listeners.push(fn);
   },
 
-  /* UNSUBSCRIBE */
-  unsubscribe(listener: () => void) {
-    listeners = listeners.filter(
-      (l) => l !== listener
-    );
+  unsubscribe: (fn: Function) => {
+    listeners = listeners.filter((l) => l !== fn);
   },
 };

@@ -24,6 +24,7 @@ export default function AdminOrdersPage() {
     };
   }, []);
 
+  // ✅ SINGLE CLEAN FUNCTION (ONLY ONE!)
   const updateStatus = (
     id: string,
     status: OrderStatus
