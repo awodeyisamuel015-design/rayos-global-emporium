@@ -26,18 +26,22 @@ export type Order = {
 const STORAGE_KEY = "rayos_orders_v2";
 
 let orders: Order[] = [];
-let listeners: Function[] = [];
+
+/* Better typing for listeners */
+let listeners: Array<() => void> = [];
 
 /* ---------------- LOAD ---------------- */
 function load(): Order[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === "undefined") {
+    return [];
+  }
 
   try {
     const data = localStorage.getItem(STORAGE_KEY);
 
     return data ? JSON.parse(data) : [];
-  } catch (err) {
-    console.error("Failed to load orders:", err);
+  } catch (error) {
+    console.error("Failed to load orders:", error);
 
     return [];
   }
@@ -45,16 +49,23 @@ function load(): Order[] {
 
 /* ---------------- SAVE ---------------- */
 function save() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") {
+    return;
+  }
 
   try {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify(orders)
     );
-  } catch (err) {
-    console.error("Failed to save orders:", err);
+  } catch (error) {
+    console.error("Failed to save orders:", error);
   }
+}
+
+/* ---------------- EMIT ---------------- */
+function emit() {
+  listeners.forEach((listener) => listener());
 }
 
 /* ---------------- INIT ---------------- */
@@ -62,24 +73,21 @@ if (typeof window !== "undefined") {
   orders = load();
 }
 
-/* ---------------- EMIT ---------------- */
-function emit() {
-  listeners.forEach((fn) => fn());
-}
-
 /* ---------------- STORE ---------------- */
 export const orderStore = {
   /* GET ALL ORDERS */
-  getAll: (): Order[] => orders,
+  getAll(): Order[] {
+    return [...orders];
+  },
 
   /* CREATE ORDER */
-  createOrder: (
+  createOrder(
     name: string,
     phone: string,
     address: string,
     items: Product[],
     status: OrderStatus = "pending"
-  ) => {
+  ) {
     const total = items.reduce(
       (sum, item) => sum + item.price,
       0
@@ -103,13 +111,16 @@ export const orderStore = {
   },
 
   /* UPDATE STATUS */
-  updateOrderStatus: (
+  updateOrderStatus(
     id: string,
     status: OrderStatus
-  ) => {
+  ) {
     orders = orders.map((order) =>
       order.id === id
-        ? { ...order, status }
+        ? {
+            ...order,
+            status,
+          }
         : order
     );
 
@@ -118,7 +129,7 @@ export const orderStore = {
   },
 
   /* DELETE ORDER */
-  deleteOrder: (id: string) => {
+  deleteOrder(id: string) {
     orders = orders.filter(
       (order) => order.id !== id
     );
@@ -128,7 +139,7 @@ export const orderStore = {
   },
 
   /* CLEAR ALL ORDERS */
-  clear: () => {
+  clear() {
     orders = [];
 
     save();
@@ -136,14 +147,14 @@ export const orderStore = {
   },
 
   /* SUBSCRIBE */
-  subscribe: (fn: Function) => {
-    listeners.push(fn);
+  subscribe(listener: () => void) {
+    listeners.push(listener);
   },
 
   /* UNSUBSCRIBE */
-  unsubscribe: (fn: Function) => {
+  unsubscribe(listener: () => void) {
     listeners = listeners.filter(
-      (listener) => listener !== fn
+      (l) => l !== listener
     );
   },
 };

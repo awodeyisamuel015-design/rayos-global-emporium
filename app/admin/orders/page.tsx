@@ -12,7 +12,7 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   const loadOrders = () => {
-    setOrders([...orderStore.getAll()]);
+    setOrders(orderStore.getAll());
   };
 
   useEffect(() => {
@@ -30,7 +30,6 @@ export default function AdminOrdersPage() {
     status: OrderStatus
   ) => {
     orderStore.updateOrderStatus(id, status);
-    loadOrders();
   };
 
   const deleteOrder = (id: string) => {
@@ -38,10 +37,11 @@ export default function AdminOrdersPage() {
       "Are you sure you want to delete this order?"
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     orderStore.deleteOrder(id);
-    loadOrders();
   };
 
   return (
@@ -77,6 +77,7 @@ export default function AdminOrdersPage() {
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6"
               >
 
+                {/* Header */}
                 <div className="flex flex-col md:flex-row md:justify-between gap-4 mb-6">
 
                   <div>
@@ -107,6 +108,7 @@ export default function AdminOrdersPage() {
 
                 </div>
 
+                {/* Customer Details */}
                 <div className="mb-6">
 
                   <h3 className="font-bold mb-2">
@@ -127,6 +129,7 @@ export default function AdminOrdersPage() {
 
                 </div>
 
+                {/* Ordered Items */}
                 <div className="mb-6">
 
                   <h3 className="font-bold mb-2">
@@ -135,9 +138,9 @@ export default function AdminOrdersPage() {
 
                   <div className="space-y-2">
 
-                    {order.items.map((item, index) => (
+                    {order.items.map((item) => (
                       <div
-                        key={index}
+                        key={item.id}
                         className="flex justify-between border-b border-gray-200 dark:border-gray-700 pb-2"
                       >
 
@@ -156,11 +159,11 @@ export default function AdminOrdersPage() {
 
                 </div>
 
+                {/* Footer */}
                 <div className="flex flex-col md:flex-row md:justify-between gap-4">
 
                   <div className="text-xl font-bold text-green-600">
-                    Total: ₦
-                    {order.total.toLocaleString()}
+                    Total: ₦{order.total.toLocaleString()}
                   </div>
 
                   <div className="flex flex-wrap gap-3">
