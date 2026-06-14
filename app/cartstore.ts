@@ -3,7 +3,6 @@ export type Product = {
   name: string;
   price: number;
   image: string;
-  category?: string;
 };
 
 const STORAGE_KEY = "rayos_cart_v2";

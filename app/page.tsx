@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,7 +13,7 @@ import { showToast } from "./components/Toast";
 
 import { cartStore } from "./cartstore";
 import { wishlistStore } from "./wishlistStore";
-import { productStore, Product } from "./lib/productStore";
+import { productStore, type Product } from "./lib/productStore";
 
 export default function Home() {
   const router = useRouter();
@@ -53,7 +54,6 @@ export default function Home() {
     };
   }, []);
 
-  // 🔥 SHOW WELCOME SCREEN FIRST
   if (showWelcome) {
     return (
       <WelcomeScreen
@@ -69,7 +69,7 @@ export default function Home() {
 
     const matchesCategory =
       category === "all" ||
-      product.category === category;
+      product.category?.toLowerCase() === category.toLowerCase();
 
     return matchesSearch && matchesCategory;
   });
@@ -82,16 +82,14 @@ export default function Home() {
 
         <div className="flex justify-between items-center">
 
-          {/* LOGO */}
           <Image
             src="/logo.png"
             alt="Rayos Global Emporium"
             width={120}
             height={50}
-            className="w-[120px] h-auto scale-125 relative left-[-10px]"
+            className="w-[120px] h-auto scale-200 relative left-[-20px]"
           />
 
-          {/* ACTIONS */}
           <div className="flex items-center gap-3">
 
             <ThemeToggle />
@@ -121,7 +119,6 @@ export default function Home() {
             </button>
 
           </div>
-
         </div>
       </header>
 
@@ -141,7 +138,7 @@ export default function Home() {
 
       </section>
 
-      {/* CATEGORY */}
+      {/* CATEGORY BUTTONS */}
       <section className="flex justify-center gap-3 mb-10 flex-wrap px-4">
 
         {["all", "men", "women", "kids"].map((cat) => (
@@ -176,8 +173,8 @@ export default function Home() {
 
               <img
                 src={product.image}
-                className="w-full h-56 object-cover"
                 alt={product.name}
+                className="w-full h-56 object-cover"
               />
 
               <div className="p-4">
@@ -224,7 +221,7 @@ export default function Home() {
 
       </section>
 
-      {/* ADMIN */}
+      {/* ADMIN LINK */}
       <Link
         href="/admin/login"
         className="fixed bottom-6 left-6 bg-yellow-400 text-black px-5 py-3 rounded-full font-bold"

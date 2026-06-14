@@ -1,7 +1,8 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { cartStore, Product } from "@/app/cartstore";
+import { cartStore, type Product } from "../cartstore";
 
 export default function CartPage() {
   const [cart, setCart] = useState<Product[]>([]);
@@ -12,39 +13,75 @@ export default function CartPage() {
 
   useEffect(() => {
     load();
+
+    cartStore.subscribe(load);
+
+    return () => {
+      cartStore.unsubscribe(load);
+    };
   }, []);
 
-  return (
-    <main className="p-6 min-h-screen bg-black text-white">
+  const handleRemove = (id: string) => {
+    cartStore.removeFromCart(id);
+    load();
+  };
 
-      <h1 className="text-2xl font-bold mb-4">Cart</h1>
+  const handleClear = () => {
+    cartStore.clear();
+    load();
+  };
+
+  const total = cart.reduce(
+    (sum, item) => sum + item.price,
+    0
+  );
+
+  return (
+    <main className="min-h-screen bg-black text-white p-6">
+      <h1 className="text-3xl font-bold mb-6">
+        🛒 Shopping Cart
+      </h1>
 
       {cart.length === 0 ? (
-        <p>Cart is empty</p>
+        <p>Your cart is empty.</p>
       ) : (
-        cart.map((item, i) => (
-          <div
-            key={i}
-            className="flex justify-between bg-white/10 p-3 mb-2 rounded"
-          >
-            <div>
-              <h3>{item.name}</h3>
-              <p>₦{item.price}</p>
-            </div>
-
-            <button
-              onClick={() => {
-                cartStore.removeFromCart(i);
-                load();
-              }}
-              className="text-red-400"
+        <div className="space-y-4">
+          {cart.map((item) => (
+            <div
+              key={item.id}
+              className="flex justify-between items-center bg-white/10 p-4 rounded-xl"
             >
-              Remove
-            </button>
-          </div>
-        ))
-      )}
+              <div>
+                <h3 className="font-semibold text-lg">
+                  {item.name}
+                </h3>
 
+                <p>
+                  ₦{item.price.toLocaleString()}
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleRemove(item.id)}
+                className="bg-red-500 px-4 py-2 rounded-lg text-white hover:bg-red-600"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+
+          <div className="mt-6 text-xl font-bold">
+            Total: ₦{total.toLocaleString()}
+          </div>
+
+          <button
+            onClick={handleClear}
+            className="mt-4 bg-yellow-500 text-black px-6 py-3 rounded-lg font-semibold hover:bg-yellow-400"
+          >
+            Clear Cart
+          </button>
+        </div>
+      )}
     </main>
   );
 }

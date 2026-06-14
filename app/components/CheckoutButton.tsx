@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
-import { cartStore } from "@/app/cartstore";
-import { orderStore } from "@/app/orderStore";
+import { cartStore } from "../cartstore";
+import { orderStore } from "../lib/orderStore";
 
 export default function CheckoutButton() {
   const router = useRouter();
@@ -10,11 +11,24 @@ export default function CheckoutButton() {
   const handleCheckout = () => {
     const items = cartStore.getCart();
 
-    if (items.length === 0) return;
+    // Prevent empty checkout
+    if (items.length === 0) {
+      alert("Cart is empty");
+      return;
+    }
 
-    orderStore.createOrder(items);
-    cartStore.clearCart();
+    // Create order (NO missing variables anymore)
+    orderStore.createOrder(
+      "Guest User",
+      "0000000000",
+      "Not Provided",
+      items
+    );
 
+    // Clear cart only ONCE
+    cartStore.clear();
+
+    // Redirect to orders page
     router.push("/orders");
   };
 

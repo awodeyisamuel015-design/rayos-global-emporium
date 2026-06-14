@@ -1,3 +1,4 @@
+
 export type Product = {
   id: string;
   name: string;
@@ -25,11 +26,12 @@ export type Order = {
 const STORAGE_KEY = "rayos_orders_v3";
 
 let orders: Order[] = [];
-let listeners: Function[] = [];
+let listeners: Array<() => void> = [];
 
 /* LOAD */
 function load(): Order[] {
   if (typeof window === "undefined") return [];
+
   try {
     const data = localStorage.getItem(STORAGE_KEY);
     return data ? JSON.parse(data) : [];
@@ -41,7 +43,11 @@ function load(): Order[] {
 /* SAVE */
 function save() {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify(orders)
+  );
 }
 
 /* INIT */
@@ -55,16 +61,21 @@ function emit() {
 }
 
 export const orderStore = {
-  getAll: () => orders,
+  getAll(): Order[] {
+    return orders;
+  },
 
-  createOrder: (
+  createOrder(
     name: string,
     phone: string,
     address: string,
     items: Product[],
     status: OrderStatus = "pending"
-  ) => {
-    const total = items.reduce((sum, i) => sum + i.price, 0);
+  ) {
+    const total = items.reduce(
+      (sum, item) => sum + item.price,
+      0
+    );
 
     const newOrder: Order = {
       id: Date.now().toString(),
@@ -78,35 +89,48 @@ export const orderStore = {
     };
 
     orders.unshift(newOrder);
+
     save();
     emit();
   },
 
-  updateOrderStatus: (id: string, status: OrderStatus) => {
-    orders = orders.map((o) =>
-      o.id === id ? { ...o, status } : o
+  updateOrderStatus(
+    id: string,
+    status: OrderStatus
+  ) {
+    orders = orders.map((order) =>
+      order.id === id
+        ? { ...order, status }
+        : order
     );
+
     save();
     emit();
   },
 
-  deleteOrder: (id: string) => {
-    orders = orders.filter((o) => o.id !== id);
+  deleteOrder(id: string) {
+    orders = orders.filter(
+      (order) => order.id !== id
+    );
+
     save();
     emit();
   },
 
-  clear: () => {
+  clear() {
     orders = [];
+
     save();
     emit();
   },
 
-  subscribe: (fn: Function) => {
+  subscribe(fn: () => void) {
     listeners.push(fn);
   },
 
-  unsubscribe: (fn: Function) => {
-    listeners = listeners.filter((l) => l !== fn);
+  unsubscribe(fn: () => void) {
+    listeners = listeners.filter(
+      (listener) => listener !== fn
+    );
   },
 };
