@@ -1,7 +1,11 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
-import { productStore, type Product } from "../../lib/productStore";
+import {
+  productStore,
+  type Product,
+} from "../../lib/productStore";
 
 export default function AdminProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -26,28 +30,12 @@ export default function AdminProducts() {
     };
   }, []);
 
-  const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onloadend = () => {
-      setImage(reader.result as string);
-    };
-
-    reader.readAsDataURL(file);
-  };
-
   const handleAdd = () => {
     if (
-      !name ||
-      !price ||
-      !description ||
-      !image
+      !name.trim() ||
+      !price.trim() ||
+      !description.trim() ||
+      !image.trim()
     ) {
       alert("Please fill all fields.");
       return;
@@ -72,18 +60,17 @@ export default function AdminProducts() {
   };
 
   const handleDelete = (id: string) => {
-    if (
-      confirm(
-        "Are you sure you want to delete this product?"
-      )
-    ) {
+    const confirmed = window.confirm(
+      "Delete this product?"
+    );
+
+    if (confirmed) {
       productStore.removeProduct(id);
     }
   };
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
-
       <h1 className="text-3xl font-bold mb-8">
         📦 Product Management
       </h1>
@@ -112,7 +99,7 @@ export default function AdminProducts() {
         />
 
         <textarea
-          placeholder="Product Description"
+          placeholder="Description"
           value={description}
           onChange={(e) =>
             setDescription(e.target.value)
@@ -133,18 +120,15 @@ export default function AdminProducts() {
           <option value="kids">Kids</option>
         </select>
 
-        <div>
-          <label className="block mb-2">
-            Upload Product Image
-          </label>
-
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="w-full"
-          />
-        </div>
+        <input
+          type="text"
+          placeholder="Image URL (e.g. /products/shoe1.jpg)"
+          value={image}
+          onChange={(e) =>
+            setImage(e.target.value)
+          }
+          className="w-full p-3 rounded bg-white/10 border border-white/20"
+        />
 
         {image && (
           <img
@@ -174,7 +158,6 @@ export default function AdminProducts() {
               key={product.id}
               className="bg-white/10 rounded-xl overflow-hidden"
             >
-
               <img
                 src={product.image}
                 alt={product.name}
@@ -196,7 +179,7 @@ export default function AdminProducts() {
                 </p>
 
                 <p className="capitalize text-sm text-gray-500 mt-2">
-                  {product.category}
+                  Category: {product.category}
                 </p>
 
                 <button
@@ -209,13 +192,11 @@ export default function AdminProducts() {
                 </button>
 
               </div>
-
             </div>
           ))
         )}
 
       </div>
-
     </main>
   );
 }
