@@ -1,7 +1,7 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
+import axios from "axios";
 import {
   productStore,
   type Product,
@@ -14,7 +14,9 @@ export default function AdminProducts() {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("men");
-  const [image, setImage] = useState("");
+
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const update = () => {
@@ -22,7 +24,6 @@ export default function AdminProducts() {
     };
 
     update();
-
     productStore.subscribe(update);
 
     return () => {
@@ -30,171 +31,177 @@ export default function AdminProducts() {
     };
   }, []);
 
-  const handleAdd = () => {
-    if (
-      !name.trim() ||
-      !price.trim() ||
-      !description.trim() ||
-      !image.trim()
-    ) {
-      alert("Please fill all fields.");
+  // 📸 SELECT IMAGE FROM GALLERY
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setImageFile(file);
+  };
+
+  // ☁️ UPLOAD TO CLOUDINARY
+  const uploadImage = async (): Promise<string | null> => {
+    if (!imageFile) return null;
+
+    const formData = new FormData();
+    formData.append("file", imageFile);
+    formData.append(
+      "upload_preset",
+      process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+    );
+
+    setUploading(true);
+
+    try {
+      const res = await axios.post(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        formData
+      );
+
+      return res.data.secure_url;
+    } catch (err) {
+      console.error("Upload failed", err);
+      alert("Image upload failed");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // ➕ ADD PRODUCT
+  const handleAdd = async () => {
+    if (!name || !price || !description || !imageFile) {
+      alert("Please fill all fields");
       return;
     }
+
+    const imageUrl = await uploadImage();
+    if (!imageUrl) return;
 
     productStore.addProduct({
       id: Date.now().toString(),
       name,
       price: Number(price),
       description,
-      image,
       category,
+      image: imageUrl,
     });
 
     setName("");
     setPrice("");
     setDescription("");
     setCategory("men");
-    setImage("");
+    setImageFile(null);
 
     alert("Product added successfully!");
   };
 
+  // ❌ DELETE
   const handleDelete = (id: string) => {
-    const confirmed = window.confirm(
-      "Delete this product?"
-    );
-
-    if (confirmed) {
+    if (confirm("Delete this product?")) {
       productStore.removeProduct(id);
     }
   };
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
+
       <h1 className="text-3xl font-bold mb-8">
-        📦 Product Management
+        🛍 Admin Product Manager (Amazon Style)
       </h1>
 
       {/* FORM */}
-      <div className="bg-white/10 rounded-xl p-6 max-w-lg mb-10 space-y-4">
+      <div className="bg-white/10 p-6 rounded-xl max-w-lg space-y-4">
 
         <input
-          type="text"
           placeholder="Product Name"
           value={name}
-          onChange={(e) =>
-            setName(e.target.value)
-          }
-          className="w-full p-3 rounded bg-white/10 border border-white/20"
+          onChange={(e) => setName(e.target.value)}
+          className="w-full p-3 rounded bg-black/40"
         />
 
         <input
           type="number"
           placeholder="Price"
           value={price}
-          onChange={(e) =>
-            setPrice(e.target.value)
-          }
-          className="w-full p-3 rounded bg-white/10 border border-white/20"
+          onChange={(e) => setPrice(e.target.value)}
+          className="w-full p-3 rounded bg-black/40"
         />
 
         <textarea
           placeholder="Description"
           value={description}
-          onChange={(e) =>
-            setDescription(e.target.value)
-          }
-          rows={4}
-          className="w-full p-3 rounded bg-white/10 border border-white/20 resize-none"
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full p-3 rounded bg-black/40"
         />
 
         <select
           value={category}
-          onChange={(e) =>
-            setCategory(e.target.value)
-          }
-          className="w-full p-3 rounded bg-white/10 border border-white/20"
+          onChange={(e) => setCategory(e.target.value)}
+          className="w-full p-3 rounded bg-black/40"
         >
           <option value="men">Men</option>
           <option value="women">Women</option>
           <option value="kids">Kids</option>
         </select>
 
+        {/* IMAGE PICKER */}
         <input
-          type="text"
-          placeholder="Image URL (e.g. /products/shoe1.jpg)"
-          value={image}
-          onChange={(e) =>
-            setImage(e.target.value)
-          }
-          className="w-full p-3 rounded bg-white/10 border border-white/20"
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
+          className="w-full"
         />
 
-        {image && (
-          <img
-            src={image}
-            alt="Preview"
-            className="w-full h-48 object-cover rounded"
-          />
+        {imageFile && (
+          <p className="text-green-400 text-sm">
+            ✔ Image selected: {imageFile.name}
+          </p>
         )}
 
         <button
           onClick={handleAdd}
-          className="w-full bg-yellow-400 text-black py-3 rounded font-bold hover:bg-yellow-300"
+          disabled={uploading}
+          className="w-full bg-yellow-400 text-black py-3 rounded font-bold"
         >
-          Add Product
+          {uploading ? "Uploading..." : "Add Product"}
         </button>
 
       </div>
 
-      {/* PRODUCTS */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* PRODUCT LIST */}
+      <div className="grid md:grid-cols-3 gap-6 mt-10">
 
-        {products.length === 0 ? (
-          <p>No products added yet.</p>
-        ) : (
-          products.map((product) => (
-            <div
-              key={product.id}
-              className="bg-white/10 rounded-xl overflow-hidden"
+        {products.map((product) => (
+          <div
+            key={product.id}
+            className="bg-white/10 p-4 rounded-xl"
+          >
+
+            <img
+              src={product.image}
+              className="h-48 w-full object-cover rounded"
+            />
+
+            <h2 className="font-bold mt-2">
+              {product.name}
+            </h2>
+
+            <p className="text-yellow-400">
+              ₦{product.price.toLocaleString()}
+            </p>
+
+            <p className="text-sm opacity-70">
+              {product.category}
+            </p>
+
+            <button
+              onClick={() => handleDelete(product.id)}
+              className="mt-3 w-full bg-red-500 py-2 rounded"
             >
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-56 object-cover"
-              />
+              Delete
+            </button>
 
-              <div className="p-4">
-
-                <h2 className="font-bold text-lg">
-                  {product.name}
-                </h2>
-
-                <p className="text-yellow-400 font-semibold mt-1">
-                  ₦{product.price.toLocaleString()}
-                </p>
-
-                <p className="text-gray-300 mt-2 text-sm">
-                  {product.description}
-                </p>
-
-                <p className="capitalize text-sm text-gray-500 mt-2">
-                  Category: {product.category}
-                </p>
-
-                <button
-                  onClick={() =>
-                    handleDelete(product.id)
-                  }
-                  className="mt-4 w-full bg-red-500 py-2 rounded hover:bg-red-600"
-                >
-                  Delete Product
-                </button>
-
-              </div>
-            </div>
-          ))
-        )}
+          </div>
+        ))}
 
       </div>
     </main>
