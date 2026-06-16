@@ -1,112 +1,236 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { productStore } from "../../lib/productStore";
-import { cartStore } from "../../cartstore";
-import { wishlistStore } from "../../wishlistStore";
-import { showToast } from "../../components/Toast";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { productStore, type Product } from "../../lib/productStore";
 
-export default function ProductDetails() {
-  const params = useParams();
-  const router = useRouter();
+export default function AdminProducts() {
+const [products, setProducts] = useState<Product[]>([]);
 
-  const product = productStore.getById(
-    params.id as string
+const [name, setName] = useState("");
+const [price, setPrice] = useState("");
+const [description, setDescription] = useState("");
+const [category, setCategory] = useState("men");
+
+const [selectedFile, setSelectedFile] = useState<File | null>(null);
+const [preview, setPreview] = useState("");
+const [uploading, setUploading] = useState(false);
+
+useEffect(() => {
+const update = () => {
+setProducts([...productStore.getAll()]);
+};
+
+update();
+
+productStore.subscribe(update);
+
+return () => {
+  productStore.unsubscribe(update);
+};
+
+}, []);
+
+const handleImageChange = (
+e: React.ChangeEvent<HTMLInputElement>
+) => {
+const file = e.target.files?.[0];
+
+
+if (!file) return;
+
+setSelectedFile(file);
+setPreview(URL.createObjectURL(file));
+
+};
+
+const uploadImage = async () => {
+if (!selectedFile) return "";
+
+setUploading(true);
+
+const formData = new FormData();
+
+formData.append("file", selectedFile);
+formData.append(
+  "upload_preset",
+  process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!
+);
+
+try {
+  const response = await axios.post(
+    `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+    formData
   );
 
-  if (!product) {
-    return (
-      <main className="min-h-screen bg-black text-white flex flex-col justify-center items-center">
-        <h1 className="text-3xl font-bold">
-          Product Not Found
-        </h1>
+  return response.data.secure_url;
+} catch (error) {
+  console.error(error);
+  alert("Image upload failed.");
+  return "";
+} finally {
+  setUploading(false);
+}
 
-        <button
-          onClick={() => router.push("/")}
-          className="mt-6 bg-yellow-400 text-black px-6 py-3 rounded-xl"
-        >
-          Back Home
-        </button>
-      </main>
-    );
-  }
 
-  return (
-    <main className="min-h-screen bg-black text-white px-6 py-10">
+};
 
-      <button
-        onClick={() => router.back()}
-        className="mb-8 bg-white/10 px-4 py-2 rounded-lg"
+const handleAdd = async () => {
+if (
+!name ||
+!price ||
+!description ||
+!selectedFile
+) {
+alert("Please fill all fields.");
+return;
+}
+
+
+const imageUrl = await uploadImage();
+
+if (!imageUrl) return;
+
+productStore.addProduct({
+  id: Date.now().toString(),
+  name,
+  price: Number(price),
+  description,
+  category,
+  image: imageUrl,
+});
+
+setName("");
+setPrice("");
+setDescription("");
+setCategory("men");
+
+setSelectedFile(null);
+setPreview("");
+
+alert("Product added successfully!");
+
+
+};
+
+const handleDelete = (id: string) => {
+if (confirm("Delete this product?")) {
+productStore.removeProduct(id);
+}
+};
+
+return ( <main className="min-h-screen bg-black text-white p-6"> <h1 className="text-3xl font-bold mb-8">
+📦 Product Management </h1>
+
+  <div className="bg-white/10 rounded-xl p-6 max-w-lg mb-10 space-y-4">
+
+    <input
+      type="text"
+      placeholder="Product Name"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      className="w-full p-3 rounded bg-white/10"
+    />
+
+    <input
+      type="number"
+      placeholder="Price"
+      value={price}
+      onChange={(e) => setPrice(e.target.value)}
+      className="w-full p-3 rounded bg-white/10"
+    />
+
+    <textarea
+      placeholder="Description"
+      rows={4}
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      className="w-full p-3 rounded bg-white/10"
+    />
+
+    <select
+      value={category}
+      onChange={(e) => setCategory(e.target.value)}
+      className="w-full p-3 rounded bg-white/10"
+    >
+      <option value="men">Men</option>
+      <option value="women">Women</option>
+      <option value="kids">Kids</option>
+    </select>
+
+    <input
+      type="file"
+      accept="image/*"
+      onChange={handleImageChange}
+    />
+
+    {preview && (
+      <img
+        src={preview}
+        alt="Preview"
+        className="w-full h-48 object-cover rounded"
+      />
+    )}
+
+    <button
+      onClick={handleAdd}
+      disabled={uploading}
+      className="w-full bg-yellow-400 text-black py-3 rounded font-bold"
+    >
+      {uploading
+        ? "Uploading..."
+        : "Add Product"}
+    </button>
+
+  </div>
+
+  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    {products.map((product) => (
+      <div
+        key={product.id}
+        className="bg-white/10 rounded-xl overflow-hidden"
       >
-        ← Back
-      </button>
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-full h-56 object-cover"
+        />
 
-      <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10">
+        <div className="p-4">
 
-        {/* PRODUCT IMAGE */}
-        <div>
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full rounded-3xl object-cover"
-          />
-        </div>
-
-        {/* PRODUCT INFO */}
-        <div>
-
-          <span className="bg-yellow-400 text-black px-3 py-1 rounded-full capitalize">
-            {product.category}
-          </span>
-
-          <h1 className="text-4xl font-bold mt-4">
+          <h2 className="font-bold">
             {product.name}
-          </h1>
+          </h2>
 
-          <p className="text-yellow-400 text-3xl font-bold mt-4">
+          <p>
             ₦{product.price.toLocaleString()}
           </p>
 
-          <div className="mt-8">
+          <p className="text-sm mt-2">
+            {product.description}
+          </p>
 
-            <h2 className="text-2xl font-semibold mb-3">
-              Product Description
-            </h2>
+          <p className="capitalize mt-2">
+            {product.category}
+          </p>
 
-            <p className="text-gray-300 leading-8">
-              {product.description}
-            </p>
-
-          </div>
-
-          <div className="mt-10 space-y-3">
-
-            <button
-              onClick={() => {
-                cartStore.addToCart(product);
-                showToast("Added to cart 🛒");
-              }}
-              className="w-full bg-yellow-400 text-black py-4 rounded-2xl font-bold"
-            >
-              🛒 Add to Cart
-            </button>
-
-            <button
-              onClick={() => {
-                wishlistStore.add(product);
-                showToast("Added to wishlist ❤️");
-              }}
-              className="w-full bg-pink-500 py-4 rounded-2xl font-bold"
-            >
-              ❤️ Add to Wishlist
-            </button>
-
-          </div>
+          <button
+            onClick={() =>
+              handleDelete(product.id)
+            }
+            className="mt-4 w-full bg-red-500 py-2 rounded"
+          >
+            Delete Product
+          </button>
 
         </div>
-
       </div>
+    ))}
 
-    </main>
-  );
+  </div>
+</main>
+
+
+);
 }
