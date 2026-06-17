@@ -30,10 +30,9 @@ function emit() {
 }
 
 export const cartStore = {
-  getAll: () => cart,
+  getAll: (): CartItem[] => cart,
 
-  // 🔥 FIX: correct function name usage everywhere
-  getCartCount: () =>
+  getCartCount: (): number =>
     cart.reduce((sum, item) => sum + item.quantity, 0),
 
   addToCart: (product: Omit<CartItem, "quantity">) => {
@@ -61,7 +60,9 @@ export const cartStore = {
     emit();
   },
 
-  subscribe: (fn: () => void) => listeners.push(fn),
+  subscribe: (fn: () => void) => {
+    listeners.push(fn);
+  },
 
   unsubscribe: (fn: () => void) => {
     listeners = listeners.filter((l) => l !== fn);
