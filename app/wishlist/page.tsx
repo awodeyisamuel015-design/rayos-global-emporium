@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { wishlistStore } from "../wishlistStore";
+import { wishlistStore } from "../lib/wishlistStore";
 
 export default function WishlistPage() {
   const [items, setItems] = useState(
