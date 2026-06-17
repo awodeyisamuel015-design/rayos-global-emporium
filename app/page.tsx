@@ -83,6 +83,7 @@ export default function Home() {
             alt="Rayos Global"
             width={120}
             height={50}
+            className="scale-250 -z-[1] left-[-12px] relative"
           />
 
           <div className="flex gap-3 items-center">
