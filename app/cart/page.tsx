@@ -1,14 +1,13 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { cartStore, type Product } from "../lib/cartStore";
+import { cartStore, type CartItem } from "../lib/cartStore";
 
 export default function CartPage() {
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const load = () => {
-    setCart([...cartStore.getCart()]);
+    setCart([...cartStore.getAll()]);
   };
 
   useEffect(() => {
@@ -32,7 +31,7 @@ export default function CartPage() {
   };
 
   const total = cart.reduce(
-    (sum, item) => sum + item.price,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
@@ -56,8 +55,10 @@ export default function CartPage() {
                   {item.name}
                 </h3>
 
-                <p>
-                  ₦{item.price.toLocaleString()}
+                <p>₦{item.price.toLocaleString()}</p>
+
+                <p className="text-sm text-gray-400">
+                  Qty: {item.quantity}
                 </p>
               </div>
 
