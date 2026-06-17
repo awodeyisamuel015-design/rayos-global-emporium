@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { cartStore, Product } from "../cartstore";
+import { cartStore, Product } from "../lib/cartStore";
 import { orderStore } from "../lib/orderStore";
 
 export default function CheckoutPage() {

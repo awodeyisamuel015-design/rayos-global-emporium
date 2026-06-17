@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { cartStore } from "../cartstore";
-import type { Product } from "../cartstore";
+import { cartStore, type CartItem } from "../lib/cartStore";
 
 export default function CartDrawer({
   open,
@@ -14,10 +13,10 @@ export default function CartDrawer({
 }) {
   const router = useRouter();
 
-  const [cart, setCart] = useState<Product[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   const load = () => {
-    setCart([...cartStore.getCart()]);
+    setCart([...cartStore.getAll()]);
   };
 
   useEffect(() => {
@@ -30,13 +29,12 @@ export default function CartDrawer({
     };
   }, []);
 
-  // ✅ FIXED REMOVE FUNCTION
   const removeItem = (id: string) => {
     cartStore.removeFromCart(id);
   };
 
   const total = cart.reduce(
-    (sum, item) => sum + item.price,
+    (sum, item) => sum + item.price * item.quantity,
     0
   );
 
@@ -48,9 +46,7 @@ export default function CartDrawer({
     >
       {/* HEADER */}
       <div className="flex justify-between items-center p-4 border-b border-white/10">
-        <h2 className="text-lg font-bold">
-          Your Cart 🛒
-        </h2>
+        <h2 className="text-lg font-bold">Your Cart 🛒</h2>
 
         <button
           onClick={onClose}
@@ -60,7 +56,7 @@ export default function CartDrawer({
         </button>
       </div>
 
-      {/* CART ITEMS */}
+      {/* ITEMS */}
       <div className="p-4 space-y-3 overflow-y-auto h-[75%]">
         {cart.length === 0 ? (
           <p className="text-gray-400 text-center mt-10">
@@ -80,9 +76,12 @@ export default function CartDrawer({
                 <p className="text-yellow-400 text-sm">
                   ₦{item.price.toLocaleString()}
                 </p>
+
+                <p className="text-xs text-gray-400">
+                  Qty: {item.quantity}
+                </p>
               </div>
 
-              {/* REMOVE BUTTON FIXED */}
               <button
                 onClick={() => removeItem(item.id)}
                 className="text-red-400 text-sm hover:text-red-500"
@@ -97,16 +96,13 @@ export default function CartDrawer({
       {/* FOOTER */}
       <div className="absolute bottom-0 left-0 w-full p-4 border-t border-white/10 bg-black">
         <div className="flex justify-between mb-3">
-          <span className="text-gray-400">
-            Total
-          </span>
+          <span className="text-gray-400">Total</span>
 
           <span className="text-yellow-400 font-bold">
             ₦{total.toLocaleString()}
           </span>
         </div>
 
-        {/* CHECKOUT FIXED */}
         <button
           onClick={() => {
             onClose();
@@ -114,7 +110,7 @@ export default function CartDrawer({
           }}
           className="w-full bg-yellow-500 text-black py-3 rounded-xl font-bold hover:bg-yellow-400 transition"
         >
-          Proceed to Luxury Checkout
+          Proceed to Checkout
         </button>
       </div>
     </div>

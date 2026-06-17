@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { wishlistStore } from "../wishlistStore";
-import type { Product } from "../cartstore";
+import type { Product } from "../lib/cartStore";
 
 export default function HeartButton({
   product,

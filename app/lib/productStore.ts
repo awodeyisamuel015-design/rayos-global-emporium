@@ -12,97 +12,76 @@ const STORAGE_KEY = "rayos_products";
 let products: Product[] = [];
 let listeners: Array<() => void> = [];
 
-/* LOAD PRODUCTS */
+/* SAFE LOAD */
 function loadProducts(): Product[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
+  if (typeof window === "undefined") return [];
 
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-
     return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Failed to load products:", error);
-
+  } catch (err) {
+    console.warn("Failed to load products:", err);
     return [];
   }
 }
 
-/* SAVE PRODUCTS */
+/* SAFE SAVE */
 function saveProducts() {
-  if (typeof window === "undefined") {
-    return;
-  }
+  if (typeof window === "undefined") return;
 
   try {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(products)
-    );
-  } catch (error) {
-    console.error(
-      "Failed to save products. Storage quota exceeded:",
-      error
-    );
-
-    alert(
-      "Unable to save products. Your browser storage is full. Please reduce image sizes or clear old products."
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+  } catch (err) {
+    console.warn("Storage quota exceeded:", err);
   }
 }
 
-/* INITIALIZE */
+/* INIT */
 if (typeof window !== "undefined") {
   products = loadProducts();
 }
 
-/* NOTIFY SUBSCRIBERS */
+/* EMIT UPDATES */
 function emit() {
   listeners.forEach((fn) => fn());
 }
 
 export const productStore = {
-  getAll(): Product[] {
-    return products;
-  },
+  /* GET ALL PRODUCTS */
+  getAll: (): Product[] => products,
 
-  getById(id: string): Product | undefined {
-    return products.find(
-      (product) => product.id === id
-    );
-  },
+  /* GET SINGLE PRODUCT */
+  getById: (id: string): Product | undefined =>
+    products.find((p) => p.id === id),
 
-  addProduct(product: Product) {
+  /* ADD PRODUCT */
+  addProduct: (product: Product) => {
     products = [product, ...products];
-
     saveProducts();
     emit();
   },
 
-  removeProduct(id: string) {
-    products = products.filter(
-      (product) => product.id !== id
-    );
-
+  /* REMOVE PRODUCT */
+  removeProduct: (id: string) => {
+    products = products.filter((p) => p.id !== id);
     saveProducts();
     emit();
   },
 
-  clear() {
+  /* CLEAR ALL */
+  clear: () => {
     products = [];
-
     saveProducts();
     emit();
   },
 
-  subscribe(fn: () => void) {
+  /* SUBSCRIBE */
+  subscribe: (fn: () => void) => {
     listeners.push(fn);
   },
 
-  unsubscribe(fn: () => void) {
-    listeners = listeners.filter(
-      (listener) => listener !== fn
-    );
+  /* UNSUBSCRIBE */
+  unsubscribe: (fn: () => void) => {
+    listeners = listeners.filter((l) => l !== fn);
   },
 };
