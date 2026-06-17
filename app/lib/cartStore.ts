@@ -13,28 +13,42 @@ const STORAGE_KEY = "rayos_cart_v2";
 let cart: CartItem[] = [];
 let listeners: Array<() => void> = [];
 
-/* LOAD */
+/* LOAD CART */
 if (typeof window !== "undefined") {
-  const data = localStorage.getItem(STORAGE_KEY);
-  cart = data ? JSON.parse(data) : [];
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    cart = data ? JSON.parse(data) : [];
+  } catch (err) {
+    console.warn("Failed to load cart");
+    cart = [];
+  }
 }
 
-/* SAVE */
+/* SAVE CART */
 function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
+  } catch (err) {
+    console.warn("Cart save failed");
+  }
 }
 
-/* EMIT */
+/* EMIT CHANGES */
 function emit() {
   listeners.forEach((fn) => fn());
 }
 
 export const cartStore = {
+  /* GET ALL ITEMS */
   getAll: (): CartItem[] => cart,
 
+  /* COUNT ITEMS */
   getCartCount: (): number =>
     cart.reduce((sum, item) => sum + item.quantity, 0),
 
+  /* ADD ITEM */
   addToCart: (product: Omit<CartItem, "quantity">) => {
     const existing = cart.find((p) => p.id === product.id);
 
@@ -48,22 +62,26 @@ export const cartStore = {
     emit();
   },
 
+  /* REMOVE ITEM */
   removeFromCart: (id: string) => {
     cart = cart.filter((p) => p.id !== id);
     save();
     emit();
   },
 
+  /* CLEAR CART */
   clear: () => {
     cart = [];
     save();
     emit();
   },
 
+  /* SUBSCRIBE */
   subscribe: (fn: () => void) => {
     listeners.push(fn);
   },
 
+  /* UNSUBSCRIBE */
   unsubscribe: (fn: () => void) => {
     listeners = listeners.filter((l) => l !== fn);
   },

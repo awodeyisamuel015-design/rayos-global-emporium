@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
-import { wishlistStore } from "../wishlistStore";
-import type { Product } from "../lib/cartStore";
+import { wishlistStore } from "../lib/wishlistStore";
+import type { Product } from "../lib/productStore";
 
 export default function HeartButton({
   product,
@@ -43,10 +42,7 @@ export default function HeartButton({
   };
 
   return (
-    <button
-      onClick={toggle}
-      className="text-2xl transition"
-    >
+    <button onClick={toggle} className="text-2xl transition">
       {liked ? "❤️" : "🤍"}
     </button>
   );
