@@ -11,23 +11,21 @@ const [price, setPrice] = useState("");
 const [description, setDescription] = useState("");
 const [category, setCategory] = useState("men");
 
-const [image, setImage] = useState("");
+const [image, setImage] = useState<string>("");
 const [uploading, setUploading] = useState(false);
 
 useEffect(() => {
-const loadProducts = () => {
+const load = () => {
 setProducts([...productStore.getAll()]);
 };
 
+load();
 
-loadProducts();
-
-productStore.subscribe(loadProducts);
+productStore.subscribe(load);
 
 return () => {
-  productStore.unsubscribe(loadProducts);
+  productStore.unsubscribe(load);
 };
-
 
 }, []);
 
@@ -35,7 +33,6 @@ const handleImageUpload = async (
 e: React.ChangeEvent<HTMLInputElement>
 ) => {
 const file = e.target.files?.[0];
-
 if (!file) return;
 
 setUploading(true);
@@ -43,22 +40,21 @@ setUploading(true);
 try {
   const cloudName =
     process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
   const uploadPreset =
     process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+  console.log("Cloud Name:", cloudName);
+  console.log("Upload Preset:", uploadPreset);
+
   if (!cloudName || !uploadPreset) {
-    throw new Error(
-      "Cloudinary environment variables missing"
-    );
+    throw new Error("Missing Cloudinary env variables");
   }
 
   const formData = new FormData();
-
   formData.append("file", file);
   formData.append("upload_preset", uploadPreset);
 
-  const response = await fetch(
+  const res = await fetch(
     `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
     {
       method: "POST",
@@ -66,25 +62,25 @@ try {
     }
   );
 
-  const data = await response.json();
+  const data = await res.json();
 
   console.log("Cloudinary response:", data);
 
-  if (!response.ok) {
+  if (!res.ok) {
     throw new Error(
       data?.error?.message || "Upload failed"
     );
   }
 
+  if (!data.secure_url) {
+    throw new Error("No image URL returned");
+  }
+
   setImage(data.secure_url);
-
   alert("✅ Image uploaded successfully!");
-} catch (error: any) {
-  console.error(error);
-
-  alert(
-    error.message || "Image upload failed"
-  );
+} catch (err: any) {
+  console.error("UPLOAD ERROR:", err);
+  alert(err.message || "Upload failed");
 } finally {
   setUploading(false);
 }
@@ -92,16 +88,10 @@ try {
 };
 
 const handleAddProduct = () => {
-if (
-!name ||
-!price ||
-!description ||
-!image
-) {
+if (!name || !price || !description || !image) {
 alert("Please fill all fields");
 return;
 }
-
 
 productStore.addProduct({
   id: Date.now().toString(),
@@ -122,19 +112,13 @@ setProducts([...productStore.getAll()]);
 
 alert("✅ Product added successfully!");
 
-
 };
 
 const handleDelete = (id: string) => {
-const confirmed = confirm(
-"Delete this product?"
-);
+if (!confirm("Delete this product?")) return;
 
-
-if (!confirmed) return;
 
 productStore.removeProduct(id);
-
 setProducts([...productStore.getAll()]);
 
 
@@ -143,15 +127,12 @@ setProducts([...productStore.getAll()]);
 return ( <main className="min-h-screen bg-black text-white p-6"> <h1 className="text-3xl font-bold mb-8">
 Product Management </h1>
 
-
   <div className="bg-white/10 p-6 rounded-xl mb-10 space-y-4 max-w-xl">
     <input
       type="text"
       placeholder="Product Name"
       value={name}
-      onChange={(e) =>
-        setName(e.target.value)
-      }
+      onChange={(e) => setName(e.target.value)}
       className="w-full p-3 rounded bg-black border"
     />
 
@@ -159,9 +140,7 @@ Product Management </h1>
       type="number"
       placeholder="Price"
       value={price}
-      onChange={(e) =>
-        setPrice(e.target.value)
-      }
+      onChange={(e) => setPrice(e.target.value)}
       className="w-full p-3 rounded bg-black border"
     />
 
@@ -192,9 +171,7 @@ Product Management </h1>
       onChange={handleImageUpload}
     />
 
-    {uploading && (
-      <p>Uploading image...</p>
-    )}
+    {uploading && <p>Uploading image...</p>}
 
     {image && (
       <img
