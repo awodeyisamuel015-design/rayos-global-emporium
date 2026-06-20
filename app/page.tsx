@@ -36,9 +36,14 @@ export default function Home() {
       setWishlistCount(wishlistStore.getAll().length);
     };
 
-    const updateProducts = () => {
-      setProducts(productStore.getAll());
-    };
+    const updateProducts = async () => {
+  const data = await productStore.getAll();
+  setProducts(data);
+};
+
+useEffect(() => {
+  updateProducts();
+}, []);
 
     updateCart();
     updateWishlist();
