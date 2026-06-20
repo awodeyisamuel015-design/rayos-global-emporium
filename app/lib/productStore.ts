@@ -11,11 +11,13 @@ description: string;
 
 let listeners: Array<() => void> = [];
 
+/* notify UI updates */
 function emit() {
 listeners.forEach((fn) => fn());
 }
 
 export const productStore = {
+/* GET ALL PRODUCTS */
 async getAll(): Promise<Product[]> {
 const { data, error } = await supabase
 .from("products")
@@ -23,41 +25,42 @@ const { data, error } = await supabase
 .order("id", { ascending: false });
 
 if (error) {
-  console.error(error);
+  console.error("getAll error:", error);
   return [];
 }
 
-return data as Product[];
+return (data as Product[]) || [];
 },
 
+/* GET SINGLE PRODUCT */
 async getById(id: string): Promise<Product | null> {
 const { data, error } = await supabase
 .from("products")
 .select("*")
 .eq("id", id)
-.single();
-
+.maybeSingle(); // ✅ SAFE FIX
 if (error) {
-  console.error(error);
+  console.error("getById error:", error);
   return null;
 }
 
-return data as Product;
+return (data as Product) || null;
 },
 
+/* ADD PRODUCT */
 async addProduct(product: Product) {
 const { error } = await supabase
 .from("products")
 .insert(product);
-
 if (error) {
-  console.error(error);
+  console.error("addProduct error:", error);
   return;
 }
 
 emit();
 },
 
+/* REMOVE PRODUCT */
 async removeProduct(id: string) {
 const { error } = await supabase
 .from("products")
@@ -65,18 +68,19 @@ const { error } = await supabase
 .eq("id", id);
 
 if (error) {
-  console.error(error);
+  console.error("removeProduct error:", error);
   return;
 }
 
 emit();
-
 },
 
+/* SUBSCRIBE */
 subscribe(fn: () => void) {
 listeners.push(fn);
 },
 
+/* UNSUBSCRIBE */
 unsubscribe(fn: () => void) {
 listeners = listeners.filter((l) => l !== fn);
 },
