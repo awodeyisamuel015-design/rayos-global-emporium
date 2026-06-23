@@ -27,6 +27,7 @@ export default function Home() {
 
   const [openCart, setOpenCart] = useState(false);
 
+  // LOAD DATA
   useEffect(() => {
     const updateCart = () => {
       setCartCount(cartStore.getCartCount());
@@ -36,27 +37,27 @@ export default function Home() {
       setWishlistCount(wishlistStore.getAll().length);
     };
 
-    const updateProducts = async () => {
-  const data = await productStore.getAll();
-  setProducts(data);
-};
+    const loadProducts = async () => {
+      try {
+        const data = await productStore.getAll();
+        setProducts(data);
+      } catch (err) {
+        console.error("Failed to load products:", err);
+      }
+    };
 
-useEffect(() => {
-  updateProducts();
-}, []);
-
+    // initial load
     updateCart();
     updateWishlist();
-    updateProducts();
+    loadProducts();
 
+    // subscriptions
     cartStore.subscribe(updateCart);
     wishlistStore.subscribe(updateWishlist);
-    productStore.subscribe(updateProducts);
 
     return () => {
       cartStore.unsubscribe(updateCart);
       wishlistStore.unsubscribe(updateWishlist);
-      productStore.unsubscribe(updateProducts);
     };
   }, []);
 
@@ -64,9 +65,11 @@ useEffect(() => {
     return <WelcomeScreen onFinish={() => setShowWelcome(false)} />;
   }
 
+  // FILTER PRODUCTS
   const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = product.name
+      .toLowerCase()
+      .includes(search.toLowerCase());
 
     const matchesCategory =
       category === "all" ||
@@ -80,7 +83,6 @@ useEffect(() => {
 
       {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white/30 dark:bg-black/30 backdrop-blur-md px-6 py-4 border-b border-white/10">
-
         <div className="flex justify-between items-center">
 
           <Image
@@ -88,14 +90,11 @@ useEffect(() => {
             alt="Rayos Global"
             width={120}
             height={50}
-            className="scale-250 -z-[1] left-[-12px] relative"
           />
 
           <div className="flex gap-3 items-center">
-
             <ThemeToggle />
 
-            {/* CART */}
             <button
               onClick={() => setOpenCart(true)}
               className="bg-yellow-400 text-black px-4 py-2 rounded-full font-bold relative"
@@ -108,7 +107,6 @@ useEffect(() => {
               )}
             </button>
 
-            {/* WISHLIST */}
             <button
               onClick={() => router.push("/wishlist")}
               className="bg-pink-500 text-white px-4 py-2 rounded-full font-bold relative"
@@ -120,7 +118,6 @@ useEffect(() => {
                 </span>
               )}
             </button>
-
           </div>
         </div>
       </header>
@@ -139,7 +136,6 @@ useEffect(() => {
 
       {/* CATEGORY */}
       <section className="flex justify-center gap-3 flex-wrap mb-10 px-4">
-
         {["all", "men", "women", "kids"].map((cat) => (
           <button
             key={cat}
@@ -153,7 +149,6 @@ useEffect(() => {
             {cat}
           </button>
         ))}
-
       </section>
 
       {/* PRODUCTS */}
@@ -169,7 +164,6 @@ useEffect(() => {
               key={product.id}
               className="bg-white/20 dark:bg-black/40 rounded-2xl overflow-hidden"
             >
-
               <img
                 src={product.image}
                 className="w-full h-56 object-cover"
@@ -177,14 +171,12 @@ useEffect(() => {
               />
 
               <div className="p-4">
-
                 <h3 className="font-bold">{product.name}</h3>
 
                 <p className="text-yellow-400 font-bold">
                   ₦{product.price.toLocaleString()}
                 </p>
 
-                {/* VIEW */}
                 <button
                   onClick={() =>
                     router.push(`/product/${product.id}`)
@@ -194,7 +186,6 @@ useEffect(() => {
                   👀 View Product
                 </button>
 
-                {/* WISHLIST */}
                 <button
                   onClick={() => {
                     wishlistStore.add(product);
@@ -205,22 +196,20 @@ useEffect(() => {
                   ❤️ Wishlist
                 </button>
 
-                {/* CART */}
                 <button
                   onClick={() => {
-            cartStore.addToCart({
-               id: product.id,
-               name: product.name,
-               price: product.price,
-               image: product.image,
-});
-                 showToast("Added to cart 🛒");
+                    cartStore.addToCart({
+                      id: product.id,
+                      name: product.name,
+                      price: product.price,
+                      image: product.image,
+                    });
+                    showToast("Added to cart 🛒");
                   }}
                   className="w-full mt-2 bg-yellow-400 text-black py-2 rounded-lg font-bold"
                 >
                   🛒 Add to Cart
                 </button>
-
               </div>
             </div>
           ))
@@ -242,7 +231,6 @@ useEffect(() => {
       </footer>
 
       <CartDrawer open={openCart} onClose={() => setOpenCart(false)} />
-
     </main>
   );
 }

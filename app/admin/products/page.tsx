@@ -16,21 +16,27 @@ const [uploading, setUploading] = useState(false);
 
 // LOAD PRODUCTS (SUPABASE)
 useEffect(() => {
-const load = async () => {
+let mounted = true;
+
+const loadProducts = async () => {
+try {
 const data = await productStore.getAll();
-setProducts(data);
+
+  if (mounted) {
+    setProducts(data);
+  }
+} catch (error) {
+  console.error("Failed to load products:", error);
+}
 };
 
-
-load();
-
-productStore.subscribe(load);
+loadProducts();
 
 return () => {
-  productStore.unsubscribe(load);
+mounted = false;
 };
-
 }, []);
+
 
 // CLOUDINARY UPLOAD
 const handleImageUpload = async (
