@@ -1,10 +1,10 @@
 const ADMIN_KEY = "rayos_admin_logged_in";
 
+const ADMIN_PASSWORD = "4008Omobolanle";
+
 export const adminAuth = {
   login: (password: string) => {
-    const correctPassword = "admin123";
-
-    if (password.trim() === correctPassword) {
+    if (password.trim() === ADMIN_PASSWORD) {
       if (typeof window !== "undefined") {
         localStorage.setItem(ADMIN_KEY, "true");
       }
