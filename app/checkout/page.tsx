@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { usePaystackPayment } from "react-paystack";
-import { v4 as uuidv4 } from "uuid";
-
 import { cartStore, type CartItem } from "../lib/cartStore";
 import { supabase } from "../lib/supabase";
+
+declare global {
+  interface Window {
+    PaystackPop: any;
+  }
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
 
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
@@ -31,24 +35,23 @@ export default function CheckoutPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const script = document.createElement("script");
+    script.src = "https://js.paystack.co/v1/inline.js";
+    script.async = true;
+    document.body.appendChild(script);
+  }, []);
+
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0
   );
 
   const shipping = cartItems.length > 0 ? 2500 : 0;
+
   const total = subtotal + shipping;
 
-  const config = {
-    reference: uuidv4(),
-    email: customerEmail,
-    amount: total * 100,
-    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY!,
-  };
-
-  const initializePayment = usePaystackPayment(config);
-
-  const saveOrder = async () => {
+  async function saveOrder() {
     const { data: orderData, error } = await supabase
       .from("orders")
       .insert({
@@ -62,8 +65,8 @@ export default function CheckoutPage() {
       .single();
 
     if (error) {
-      console.error(error);
       alert("Failed to save order");
+      console.log(error);
       return;
     }
 
@@ -73,8 +76,8 @@ export default function CheckoutPage() {
       order_id: orderId,
       product_id: item.id,
       product_name: item.name,
-      price: item.price,
       quantity: item.quantity,
+      price: item.price,
       image: item.image,
     }));
 
@@ -83,7 +86,7 @@ export default function CheckoutPage() {
     cartStore.clear();
 
     router.push("/orders");
-  };
+  }
 
   const handleCheckout = () => {
     if (
@@ -96,8 +99,12 @@ export default function CheckoutPage() {
       return;
     }
 
-    initializePayment({
-      onSuccess: async () => {
+    const handler = window.PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email: customerEmail,
+      amount: total * 100,
+
+      callback: async () => {
         await saveOrder();
       },
 
@@ -105,6 +112,8 @@ export default function CheckoutPage() {
         alert("Payment cancelled");
       },
     });
+
+    handler.openIframe();
   };
 
   return (
@@ -115,88 +124,82 @@ export default function CheckoutPage() {
           Checkout
         </h1>
 
-        {cartItems.length === 0 ? (
-          <p className="text-center text-gray-400">
-            Your cart is empty
-          </p>
-        ) : (
-          <>
-            <div className="bg-white/10 p-6 rounded-2xl space-y-4 mb-8">
+        <div className="bg-white/10 p-6 rounded-2xl space-y-4 mb-8">
 
-              <input
-                className="w-full p-3 rounded bg-white/10"
-                placeholder="Full Name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-              />
+          <input
+            className="w-full p-3 rounded bg-white/10"
+            placeholder="Full Name"
+            value={customerName}
+            onChange={(e) => setCustomerName(e.target.value)}
+          />
 
-              <input
-                className="w-full p-3 rounded bg-white/10"
-                placeholder="Email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-              />
+          <input
+            className="w-full p-3 rounded bg-white/10"
+            placeholder="Email"
+            value={customerEmail}
+            onChange={(e) => setCustomerEmail(e.target.value)}
+          />
 
-              <input
-                className="w-full p-3 rounded bg-white/10"
-                placeholder="Phone Number"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-              />
+          <input
+            className="w-full p-3 rounded bg-white/10"
+            placeholder="Phone Number"
+            value={customerPhone}
+            onChange={(e) => setCustomerPhone(e.target.value)}
+          />
 
-              <textarea
-                className="w-full p-3 rounded bg-white/10"
-                placeholder="Address"
-                value={customerAddress}
-                onChange={(e) => setCustomerAddress(e.target.value)}
-              />
+          <textarea
+            className="w-full p-3 rounded bg-white/10"
+            placeholder="Address"
+            value={customerAddress}
+            onChange={(e) => setCustomerAddress(e.target.value)}
+          />
+        </div>
+
+        <div className="bg-white/10 p-6 rounded-2xl mb-8">
+          {cartItems.map((item) => (
+            <div
+              key={item.id}
+              className="flex justify-between border-b border-white/10 py-3"
+            >
+              <span>
+                {item.name} x{item.quantity}
+              </span>
+
+              <span className="text-yellow-400">
+                ₦{(item.price * item.quantity).toLocaleString()}
+              </span>
             </div>
+          ))}
+        </div>
 
-            <div className="bg-white/10 p-6 rounded-2xl mb-8">
-              {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between border-b border-white/10 py-2"
-                >
-                  <span>
-                    {item.name} x{item.quantity}
-                  </span>
+        <div className="bg-white/10 p-6 rounded-2xl">
 
-                  <span className="text-yellow-400">
-                    ₦{(item.price * item.quantity).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="flex justify-between mb-3">
+            <span>Subtotal</span>
+            <span>₦{subtotal.toLocaleString()}</span>
+          </div>
 
-            <div className="bg-white/10 p-6 rounded-2xl">
-              <div className="flex justify-between mb-3">
-                <span>Subtotal</span>
-                <span>₦{subtotal.toLocaleString()}</span>
-              </div>
+          <div className="flex justify-between mb-3">
+            <span>Shipping</span>
+            <span>₦{shipping.toLocaleString()}</span>
+          </div>
 
-              <div className="flex justify-between mb-3">
-                <span>Shipping</span>
-                <span>₦{shipping.toLocaleString()}</span>
-              </div>
+          <div className="flex justify-between text-xl font-bold">
+            <span>Total</span>
 
-              <div className="flex justify-between text-xl font-bold">
-                <span>Total</span>
+            <span className="text-yellow-400">
+              ₦{total.toLocaleString()}
+            </span>
+          </div>
 
-                <span className="text-yellow-400">
-                  ₦{total.toLocaleString()}
-                </span>
-              </div>
+          <button
+            onClick={handleCheckout}
+            className="w-full mt-6 bg-green-500 py-3 rounded-xl font-bold"
+          >
+            Pay With Paystack
+          </button>
 
-              <button
-                onClick={handleCheckout}
-                className="w-full mt-6 bg-green-500 py-3 rounded-xl font-bold"
-              >
-                Pay With Paystack
-              </button>
-            </div>
-          </>
-        )}
+        </div>
       </div>
     </main>
   );
