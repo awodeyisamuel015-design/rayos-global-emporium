@@ -1,136 +1,49 @@
+import { supabase } from "./supabase";
 
-export type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-};
+export async function createOrder(
+customer_name: string,
+phone: string,
+address: string,
+total: number
+) {
+const { data, error } = await supabase
+.from("orders")
+.insert([
+{
+customer_name,
+phone,
+address,
+total,
+status: "pending",
+},
+])
+.select()
+.single();
 
-export type OrderStatus =
-  | "pending"
-  | "processing"
-  | "delivered"
-  | "cancelled";
+if (error) throw error;
 
-export type Order = {
-  id: string;
-  name: string;
-  phone: string;
-  address: string;
-  items: Product[];
-  total: number;
-  date: string;
-  status: OrderStatus;
-};
-
-const STORAGE_KEY = "rayos_orders_v3";
-
-let orders: Order[] = [];
-let listeners: Array<() => void> = [];
-
-/* LOAD */
-function load(): Order[] {
-  if (typeof window === "undefined") return [];
-
-  try {
-    const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
-  } catch {
-    return [];
-  }
+return data;
 }
 
-/* SAVE */
-function save() {
-  if (typeof window === "undefined") return;
+export async function createOrderItems(
+items: any[]
+) {
+const { error } = await supabase
+.from("order_items")
+.insert(items);
 
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify(orders)
-  );
+if (error) throw error;
 }
 
-/* INIT */
-if (typeof window !== "undefined") {
-  orders = load();
+export async function getOrders() {
+const { data, error } = await supabase
+.from("orders")
+.select("*")
+.order("created_at", {
+ascending: false,
+});
+
+if (error) throw error;
+
+return data;
 }
-
-/* EMIT */
-function emit() {
-  listeners.forEach((fn) => fn());
-}
-
-export const orderStore = {
-  getAll(): Order[] {
-    return orders;
-  },
-
-  createOrder(
-    name: string,
-    phone: string,
-    address: string,
-    items: Product[],
-    status: OrderStatus = "pending"
-  ) {
-    const total = items.reduce(
-      (sum, item) => sum + item.price,
-      0
-    );
-
-    const newOrder: Order = {
-      id: Date.now().toString(),
-      name,
-      phone,
-      address,
-      items,
-      total,
-      date: new Date().toLocaleString(),
-      status,
-    };
-
-    orders.unshift(newOrder);
-
-    save();
-    emit();
-  },
-
-  updateOrderStatus(
-    id: string,
-    status: OrderStatus
-  ) {
-    orders = orders.map((order) =>
-      order.id === id
-        ? { ...order, status }
-        : order
-    );
-
-    save();
-    emit();
-  },
-
-  deleteOrder(id: string) {
-    orders = orders.filter(
-      (order) => order.id !== id
-    );
-
-    save();
-    emit();
-  },
-
-  clear() {
-    orders = [];
-
-    save();
-    emit();
-  },
-
-  subscribe(fn: () => void) {
-    listeners.push(fn);
-  },
-
-  unsubscribe(fn: () => void) {
-    listeners = listeners.filter(
-      (listener) => listener !== fn
-    );
-  },
-};

@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { cartStore, type CartItem } from "../lib/cartStore";
 import { supabase } from "../lib/supabase";
+import {
+  createOrder,
+  createOrderItems,
+} from "../lib/orderStore";
 
 declare global {
   interface Window {
@@ -51,42 +55,35 @@ export default function CheckoutPage() {
 
   const total = subtotal + shipping;
 
-  async function saveOrder() {
-    const { data: orderData, error } = await supabase
-      .from("orders")
-      .insert({
-        customer_name: customerName,
-        phone: customerPhone,
-        address: customerAddress,
-        total,
-        status: "pending",
-      })
-      .select()
-      .single();
+ async function saveOrder() {
+try {
+const order = await createOrder(
+customerName,
+customerPhone,
+customerAddress,
+total
+);
 
-    if (error) {
-      alert("Failed to save order");
-      console.log(error);
-      return;
-    }
+const items = cartItems.map((item) => ({
+  order_id: order.id,
+  product_id: item.id,
+  product_name: item.name,
+  image: item.image,
+  quantity: item.quantity,
+  price: item.price,
+}));
 
-    const orderId = orderData.id;
+await createOrderItems(items);
 
-    const items = cartItems.map((item) => ({
-      order_id: orderId,
-      product_id: item.id,
-      product_name: item.name,
-      quantity: item.quantity,
-      price: item.price,
-      image: item.image,
-    }));
+cartStore.clear();
 
-    await supabase.from("order_items").insert(items);
+router.push("/orders");
 
-    cartStore.clear();
-
-    router.push("/orders");
-  }
+} catch (error) {
+console.error(error);
+alert("Failed to save order");
+}
+}
 
   const handleCheckout = () => {
     if (
