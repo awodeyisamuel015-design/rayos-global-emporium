@@ -1,24 +1,35 @@
+ 
 "use client";
 
 import { useEffect, useState } from "react";
-import { orderStore, type Order } from "../lib/orderStore";
+import { getOrders, type Order } from "../lib/orderStore";
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setOrders(orderStore.getAll());
-
-    const updateOrders = () => {
-      setOrders(orderStore.getAll());
+    const loadOrders = async () => {
+      try {
+        const data = await getOrders();
+        setOrders(data || []);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    orderStore.subscribe(updateOrders);
-
-    return () => {
-      orderStore.unsubscribe(updateOrders);
-    };
+    loadOrders();
   }, []);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[#0b0b0b] text-white flex items-center justify-center">
+        Loading orders...
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#0b0b0b] text-white p-6">
@@ -43,13 +54,13 @@ export default function OrdersPage() {
                 </h2>
 
                 <span className="text-gray-400 text-sm">
-                  {order.date}
+                  {new Date(order.created_at).toLocaleDateString()}
                 </span>
               </div>
 
               <div className="mb-3">
                 <p>
-                  <strong>Name:</strong> {order.name}
+                  <strong>Name:</strong> {order.customer_name}
                 </p>
 
                 <p>
@@ -68,23 +79,8 @@ export default function OrdersPage() {
                 </p>
               </div>
 
-              <div className="space-y-2">
-                {order.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between text-sm border-b border-white/5 pb-2"
-                  >
-                    <span>{item.name}</span>
-
-                    <span>
-                      ₦{item.price.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
               <div className="mt-4 font-bold text-yellow-400">
-                Total: ₦{order.total.toLocaleString()}
+                Total: ₦{Number(order.total).toLocaleString()}
               </div>
             </div>
           ))}

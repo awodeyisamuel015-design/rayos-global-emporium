@@ -27,6 +27,8 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
 
   async function loadOrders() {
+    setLoading(true);
+
     const { data, error } = await supabase
       .from("orders")
       .select(`
@@ -36,7 +38,8 @@ export default function AdminOrdersPage() {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.log(error);
+      console.error(error);
+      setLoading(false);
       return;
     }
 
@@ -48,34 +51,41 @@ export default function AdminOrdersPage() {
     loadOrders();
   }, []);
 
-  async function updateStatus(
-    id: string,
-    status: string
-  ) {
-    await supabase
+  async function updateStatus(id: string, status: string) {
+    const { error } = await supabase
       .from("orders")
       .update({ status })
       .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     loadOrders();
   }
 
   async function deleteOrder(id: string) {
-    const confirmed = window.confirm(
-      "Delete this order?"
-    );
+    const confirmed = window.confirm("Delete this order?");
 
     if (!confirmed) return;
 
+    // delete order items first
     await supabase
       .from("order_items")
       .delete()
       .eq("order_id", id);
 
-    await supabase
+    // then delete order
+    const { error } = await supabase
       .from("orders")
       .delete()
       .eq("id", id);
+
+    if (error) {
+      console.error(error);
+      return;
+    }
 
     loadOrders();
   }
@@ -83,11 +93,8 @@ export default function AdminOrdersPage() {
   return (
     <main className="min-h-screen bg-gray-100 dark:bg-black dark:text-white p-6">
       <div className="max-w-7xl mx-auto">
-
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold">
-            📦 Admin Orders
-          </h1>
+          <h1 className="text-4xl font-bold">📦 Admin Orders</h1>
 
           <div className="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded-xl">
             Total Orders: {orders.length}
@@ -102,13 +109,11 @@ export default function AdminOrdersPage() {
           </div>
         ) : (
           <div className="space-y-6">
-
             {orders.map((order) => (
               <div
                 key={order.id}
                 className="bg-white dark:bg-gray-900 rounded-2xl shadow p-6"
               >
-
                 <div className="flex justify-between mb-6">
                   <div>
                     <h2 className="font-bold text-xl">
@@ -116,9 +121,7 @@ export default function AdminOrdersPage() {
                     </h2>
 
                     <p className="text-gray-500">
-                      {new Date(
-                        order.created_at
-                      ).toLocaleString()}
+                      {new Date(order.created_at).toLocaleString()}
                     </p>
                   </div>
 
@@ -128,23 +131,18 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="mb-6">
-                  <h3 className="font-bold mb-2">
-                    Customer
-                  </h3>
+                  <h3 className="font-bold mb-2">Customer</h3>
 
                   <p>
-                    <strong>Name:</strong>{" "}
-                    {order.customer_name}
+                    <strong>Name:</strong> {order.customer_name}
                   </p>
 
                   <p>
-                    <strong>Phone:</strong>{" "}
-                    {order.phone}
+                    <strong>Phone:</strong> {order.phone}
                   </p>
 
                   <p>
-                    <strong>Address:</strong>{" "}
-                    {order.address}
+                    <strong>Address:</strong> {order.address}
                   </p>
                 </div>
 
@@ -154,7 +152,6 @@ export default function AdminOrdersPage() {
                   </h3>
 
                   <div className="space-y-2">
-
                     {order.order_items?.map((item) => (
                       <div
                         key={item.id}
@@ -169,25 +166,18 @@ export default function AdminOrdersPage() {
                         </span>
                       </div>
                     ))}
-
                   </div>
                 </div>
 
                 <div className="flex flex-col md:flex-row justify-between gap-4">
-
                   <div className="text-green-600 text-xl font-bold">
-                    Total: ₦
-                    {order.total.toLocaleString()}
+                    Total: ₦{order.total.toLocaleString()}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
-
                     <button
                       onClick={() =>
-                        updateStatus(
-                          order.id,
-                          "pending"
-                        )
+                        updateStatus(order.id, "pending")
                       }
                       className="bg-yellow-500 text-white px-4 py-2 rounded-lg"
                     >
@@ -196,10 +186,7 @@ export default function AdminOrdersPage() {
 
                     <button
                       onClick={() =>
-                        updateStatus(
-                          order.id,
-                          "processing"
-                        )
+                        updateStatus(order.id, "processing")
                       }
                       className="bg-blue-500 text-white px-4 py-2 rounded-lg"
                     >
@@ -208,10 +195,7 @@ export default function AdminOrdersPage() {
 
                     <button
                       onClick={() =>
-                        updateStatus(
-                          order.id,
-                          "delivered"
-                        )
+                        updateStatus(order.id, "delivered")
                       }
                       className="bg-green-500 text-white px-4 py-2 rounded-lg"
                     >
@@ -220,10 +204,7 @@ export default function AdminOrdersPage() {
 
                     <button
                       onClick={() =>
-                        updateStatus(
-                          order.id,
-                          "cancelled"
-                        )
+                        updateStatus(order.id, "cancelled")
                       }
                       className="bg-gray-500 text-white px-4 py-2 rounded-lg"
                     >
@@ -231,21 +212,15 @@ export default function AdminOrdersPage() {
                     </button>
 
                     <button
-                      onClick={() =>
-                        deleteOrder(order.id)
-                      }
+                      onClick={() => deleteOrder(order.id)}
                       className="bg-red-500 text-white px-4 py-2 rounded-lg"
                     >
                       Delete
                     </button>
-
                   </div>
-
                 </div>
-
               </div>
             ))}
-
           </div>
         )}
       </div>
