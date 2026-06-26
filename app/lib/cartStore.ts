@@ -1,3 +1,4 @@
+
 // app/lib/cartStore.ts
 
 export type CartItem = {
@@ -5,7 +6,11 @@ export type CartItem = {
   name: string;
   price: number;
   image: string;
+
   quantity: number;
+
+  color?: string;
+  size?: string;
 };
 
 const STORAGE_KEY = "rayos_cart_v2";
@@ -44,18 +49,29 @@ export const cartStore = {
   /* GET ALL ITEMS */
   getAll: (): CartItem[] => cart,
 
-  /* COUNT ITEMS */
+  /* TOTAL ITEMS */
   getCartCount: (): number =>
-    cart.reduce((sum, item) => sum + item.quantity, 0),
+    cart.reduce(
+      (sum, item) => sum + item.quantity,
+      0
+    ),
 
   /* ADD ITEM */
-  addToCart: (product: Omit<CartItem, "quantity">) => {
-    const existing = cart.find((p) => p.id === product.id);
+  addToCart: (product: CartItem) => {
+    const existing = cart.find(
+      (p) =>
+        p.id === product.id &&
+        p.color === product.color &&
+        p.size === product.size
+    );
 
     if (existing) {
-      existing.quantity += 1;
+      existing.quantity += product.quantity || 1;
     } else {
-      cart.push({ ...product, quantity: 1 });
+      cart.push({
+        ...product,
+        quantity: product.quantity || 1,
+      });
     }
 
     save();
@@ -65,6 +81,7 @@ export const cartStore = {
   /* REMOVE ITEM */
   removeFromCart: (id: string) => {
     cart = cart.filter((p) => p.id !== id);
+
     save();
     emit();
   },
@@ -72,6 +89,7 @@ export const cartStore = {
   /* CLEAR CART */
   clear: () => {
     cart = [];
+
     save();
     emit();
   },
@@ -83,6 +101,8 @@ export const cartStore = {
 
   /* UNSUBSCRIBE */
   unsubscribe: (fn: () => void) => {
-    listeners = listeners.filter((l) => l !== fn);
+    listeners = listeners.filter(
+      (listener) => listener !== fn
+    );
   },
 };

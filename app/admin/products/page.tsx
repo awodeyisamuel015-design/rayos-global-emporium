@@ -8,11 +8,18 @@ const [products, setProducts] = useState<Product[]>([]);
 
 const [name, setName] = useState("");
 const [price, setPrice] = useState("");
+const [oldPrice, setOldPrice] = useState("");
+
 const [description, setDescription] = useState("");
 const [category, setCategory] = useState("men");
 
-const [image, setImage] = useState<string>("");
+const [stock, setStock] = useState("");
+const [colors, setColors] = useState("");
+const [sizes, setSizes] = useState("");
+
+const [image, setImage] = useState("");
 const [uploading, setUploading] = useState(false);
+
 
 // LOAD PRODUCTS (SUPABASE)
 useEffect(() => {
@@ -39,58 +46,6 @@ mounted = false;
 
 
 // CLOUDINARY UPLOAD
-const handleImageUpload = async (
-e: React.ChangeEvent<HTMLInputElement>
-) => {
-const file = e.target.files?.[0];
-if (!file) return;
-
-setUploading(true);
-
-try {
-  const cloudName =
-    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset =
-    process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-  if (!cloudName || !uploadPreset) {
-    throw new Error("Missing Cloudinary env variables");
-  }
-
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", uploadPreset);
-
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    throw new Error(data?.error?.message || "Upload failed");
-  }
-
-  if (!data.secure_url) {
-    throw new Error("No image URL returned");
-  }
-
-  setImage(data.secure_url);
-  alert("✅ Image uploaded successfully!");
-} catch (err: any) {
-  console.error("UPLOAD ERROR:", err);
-  alert(err.message || "Upload failed");
-} finally {
-  setUploading(false);
-}
-
-};
-
-// ADD PRODUCT (SUPABASE)
 const handleAddProduct = async () => {
 if (!name || !price || !description || !image) {
 alert("Please fill all fields");
@@ -98,16 +53,41 @@ return;
 }
 
 await productStore.addProduct({
-  id: Date.now().toString(),
-  name,
-  price: Number(price),
-  description,
-  image,
-  category,
+id: Date.now().toString(),
+
+name,
+price: Number(price),
+
+old_price: Number(oldPrice) || 0,
+
+rating: 5,
+reviews: 0,
+
+stock: Number(stock) || 0,
+
+colors: colors
+  .split(",")
+  .map((c) => c.trim())
+  .filter(Boolean),
+
+sizes: sizes
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean),
+
+description,
+image,
+category,
+
+
 });
 
 setName("");
 setPrice("");
+setOldPrice("");
+setStock("");
+setColors("");
+setSizes("");
 setDescription("");
 setCategory("men");
 setImage("");
@@ -116,6 +96,47 @@ const data = await productStore.getAll();
 setProducts(data);
 
 alert("✅ Product added successfully!");
+};
+
+
+const handleImageUpload = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  const file = e.target.files?.[0];
+
+  if (!file) return;
+
+  setUploading(true);
+
+  try {
+    const cloudName =
+      process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+    const uploadPreset =
+      process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+    formData.append("upload_preset", uploadPreset!);
+
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    setImage(data.secure_url);
+  } catch (error) {
+    console.error(error);
+    alert("Image upload failed");
+  } finally {
+    setUploading(false);
+  }
 };
 
 // DELETE PRODUCT (SUPABASE)
@@ -148,6 +169,39 @@ Product Management </h1>
       onChange={(e) => setPrice(e.target.value)}
       className="w-full p-3 rounded bg-black border"
     />
+
+    <input
+type="number"
+placeholder="Old Price"
+value={oldPrice}
+onChange={(e) => setOldPrice(e.target.value)}
+className="w-full p-3 rounded bg-black border"
+/>
+
+<input
+type="number"
+placeholder="Stock Quantity"
+value={stock}
+onChange={(e) => setStock(e.target.value)}
+className="w-full p-3 rounded bg-black border"
+/>
+
+<input
+type="text"
+placeholder="Colors (Black,Red,Blue)"
+value={colors}
+onChange={(e) => setColors(e.target.value)}
+className="w-full p-3 rounded bg-black border"
+/>
+
+<input
+type="text"
+placeholder="Sizes (S,M,L,XL)"
+value={sizes}
+onChange={(e) => setSizes(e.target.value)}
+className="w-full p-3 rounded bg-black border"
+/>
+
 
     <textarea
       placeholder="Description"

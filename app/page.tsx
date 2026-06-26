@@ -27,6 +27,14 @@ export default function Home() {
 
   const [openCart, setOpenCart] = useState(false);
 
+  const [quantity, setQuantity] = useState(1);
+
+const [selectedColor, setSelectedColor] =
+  useState("");
+
+const [selectedSize, setSelectedSize] =
+  useState("");
+
   // LOAD DATA
   useEffect(() => {
     const updateCart = () => {
@@ -90,6 +98,7 @@ export default function Home() {
             alt="Rayos Global"
             width={120}
             height={50}
+            className="flex justify-between items-center scale-200"
           />
 
           <div className="flex gap-3 items-center">
@@ -198,12 +207,17 @@ export default function Home() {
 
                 <button
                   onClick={() => {
-                    cartStore.addToCart({
-                      id: product.id,
-                      name: product.name,
-                      price: product.price,
-                      image: product.image,
-                    });
+                  cartStore.addToCart({
+  id: product.id,
+  name: product.name,
+  price: product.price,
+  image: product.image,
+
+  quantity: quantity || 1,
+
+  color: selectedColor,
+  size: selectedSize,
+});
                     showToast("Added to cart 🛒");
                   }}
                   className="w-full mt-2 bg-yellow-400 text-black py-2 rounded-lg font-bold"
