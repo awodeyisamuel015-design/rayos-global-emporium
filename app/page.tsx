@@ -98,7 +98,7 @@ const [selectedSize, setSelectedSize] =
             alt="Rayos Global"
             width={120}
             height={50}
-            className="flex justify-between items-center scale-200"
+            className="flex justify-between items-center scale-200 z-[-1]"
           />
 
           <div className="flex gap-3 items-center">
