@@ -13,9 +13,23 @@ import { showToast } from "./components/Toast";
 import { productStore, type Product } from "./lib/productStore";
 import { cartStore } from "./lib/cartStore";
 import { wishlistStore } from "./lib/wishlistStore";
+import { supabase } from "./lib/supabase";
 
 export default function Home() {
   const router = useRouter();
+  useEffect(() => {
+  const checkUser = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      router.push("/login");
+    }
+  };
+
+  checkUser();
+}, [router]);
 
   const [showWelcome, setShowWelcome] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
@@ -127,6 +141,16 @@ const [selectedSize, setSelectedSize] =
                 </span>
               )}
             </button>
+
+            <button
+  onClick={async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+  }}
+  className="bg-red-500 text-white px-4 py-2 rounded-full font-bold"
+>
+  Logout
+</button>
           </div>
         </div>
       </header>
